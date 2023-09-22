@@ -12,5 +12,5 @@ article = Articulo('https://info.cern.ch/')
 # Step 2: getting article properties. All properties resolves lazily.
 print(article.title) # title property returns article title as a string
 print(article.text) # text property returns article content as a string
-print(article.markup) # markup property returns article content as html markup string
+print(article.markup) # markup property returns article content as an html markup string
 ```
