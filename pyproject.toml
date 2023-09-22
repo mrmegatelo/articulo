@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "articulo"
+version = "0.1.0"
+description = ""
+authors = ["Mikhail Ivanov <ya.ivanov-m2014v@yandex.ru>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+lxml = "^4.9.3"
+beautifulsoup4 = "^4.12.2"
+requests = "^2.31.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
