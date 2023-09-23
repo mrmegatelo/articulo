@@ -38,3 +38,13 @@ def test_run_request_only_once(requests_mock: MockerCore, url, html):
     article.markup
     article.text
     assert request.called_once
+
+def test_provides_headers_for_request(requests_mock: MockerCore, url, html):
+    request = requests_mock.get(url, text=html)
+    article_without_headers =  Articulo(url)
+    article_without_headers.title
+    assert request.last_request.headers.get('Accept') == '*/*'
+
+    article_with_headers = Articulo(url, http_headers={ 'Accept': 'text/html' })
+    article_with_headers.title
+    assert request.last_request.headers.get('Accept') == 'text/html'

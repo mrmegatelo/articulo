@@ -13,8 +13,6 @@ from requests import RequestException
 
 from .exceptions import HTTPErrorException, MaxIterations, NoTitleException
 
-MAX_CONTENT_LOSS = 0.7
-
 
 class Articulo:
     """
@@ -24,7 +22,11 @@ class Articulo:
     """
 
     def __init__(
-        self, link: str, threshold: float = MAX_CONTENT_LOSS, verbose: bool = False
+        self,
+        link: str,
+        threshold: float = 0.7,
+        verbose: bool = False,
+        http_headers: Union[dict, None] = None
     ) -> None:
         """
         Article object
@@ -33,10 +35,13 @@ class Articulo:
         @link: Link to article, that should be processed.
         @threshold (optional): Max information loss coefficient, that affects content parsing.
         @verbose (optional): Verbose mode. If enabled than all the operations will be logged.
+        @http_headers: Additional headers for HTTP request. There is no default headers.
         """
+
         self.__link = link
         self.__threshold = threshold
         self.__verbose = verbose
+        self.__http_headers = http_headers
 
     @property
     def title(self):
@@ -161,7 +166,7 @@ class Articulo:
         Returns full page html or None if request was not successful.
         """
         self.__log(f"Start loading article from {self.__link}...")
-        response = requests.get(self.__link, timeout=2000)
+        response = requests.get(self.__link, timeout=2000, headers=self.__http_headers)
         try:
             response.raise_for_status()
         except RequestException as exc:
