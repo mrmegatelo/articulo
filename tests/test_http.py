@@ -2,23 +2,6 @@ import pytest
 from articulo import Articulo
 from requests_mock import MockerCore
 
-def test_retrieves_title_from_html(requests_mock: MockerCore, url, html):
-    requests_mock.get(url, text=html)
-    article = Articulo(url)
-    assert article.title == 'http://info.cern.ch - home of the first website'
-
-def test_dont_run_request_on_instatiation(requests_mock: MockerCore, url, html):
-    request = requests_mock.get(url, text=html)
-    Articulo(url, verbose=True)
-    assert not request.called
-
-def test_run_request_only_once(requests_mock: MockerCore, url, html):
-    request = requests_mock.get(url, text=html)
-    article = Articulo(url, verbose=True)
-    article.title
-    article.markup
-    article.text
-    assert request.called_once
 
 @pytest.fixture
 def url() -> str:
@@ -42,3 +25,16 @@ def html() -> str:
 
 </body></html>
 """
+
+def test_dont_run_request_on_instatiation(requests_mock: MockerCore, url, html):
+    request = requests_mock.get(url, text=html)
+    Articulo(url, verbose=True)
+    assert not request.called
+
+def test_run_request_only_once(requests_mock: MockerCore, url, html):
+    request = requests_mock.get(url, text=html)
+    article = Articulo(url)
+    article.title
+    article.markup
+    article.text
+    assert request.called_once

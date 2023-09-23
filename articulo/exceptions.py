@@ -14,3 +14,6 @@ class MaxIterations(Exception):
 class NoSuchElementException(Exception):
     pass
 
+class NoTitleException(Exception):
+    def __init__(self, url: str) -> None:
+        super().__init__(f'Document {url} has no apropriate TITLE tag in html.')

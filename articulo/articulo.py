@@ -1,9 +1,10 @@
 import requests
+import re
 from typing import Union
 from requests import RequestException
 from functools import cached_property
 from bs4 import BeautifulSoup, NavigableString
-from .exceptions import HTTPErrorException, MaxIterations
+from .exceptions import HTTPErrorException, MaxIterations, NoTitleException
 
 MAX_CONTENT_LOSS = 0.7
 
@@ -27,6 +28,8 @@ class Articulo:
         """
         Parsed article title
         """
+        if self.__title_element is None:
+            raise NoTitleException(self.__link)
         return self.__title_element.text
     
     @property
@@ -97,18 +100,25 @@ class Articulo:
     def __title_element(self):
         """
         Parses article html and returns article title.
+        This method assumes, that article HTML has two things:
+        * title tag - as an initial title
+        * any tag at the body with matching content - as a reference point for looking the rest article content
         """
 
-        title = None
         soup = BeautifulSoup(self.__html, features="lxml")
+        title = soup.find('title')
+        if (title is None):
+           return title
+        
+        title_inner = soup.find(
+                ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p'],
+                string=re.compile(title.text)
+            )
+        
+        if title_inner is None:
+            return title
 
-        for tag in ['h1', 'h2']:
-            result = soup.find(tag)
-            if result is not None:
-                title = result
-                break
-
-        return title
+        return title_inner
 
     @cached_property
     def __html(self) -> Union[str, None]:
