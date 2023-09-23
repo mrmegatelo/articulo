@@ -3,7 +3,7 @@ from typing import Union
 from requests import RequestException
 from functools import cached_property
 from bs4 import BeautifulSoup, NavigableString
-from .exceptions import HTTPErrorException
+from .exceptions import HTTPErrorException, MaxIterations
 
 MAX_CONTENT_LOSS = 0.7
 
@@ -52,11 +52,14 @@ class Articulo:
         soup = BeautifulSoup(self.__html, features="lxml")
 
         best_parent_found = False
-        best_parent = soup.find('body')
-        test_counter = 0
+        best_parent = soup.html
+        iter_counter = 0
+        max_iterations = 100
 
         while not best_parent_found:
             self.__log(f'Looking for an element containing "{self.__title_element.text}" title inside {best_parent.name.upper()} tag...')
+            if iter_counter >= max_iterations:
+                    raise MaxIterations('Cannot find the best parent element within 100 iterations.')
             for child in best_parent.children:
                 if (isinstance(child, NavigableString)):
                     self.__log(f'Skipping the "{child}" string...')
@@ -82,10 +85,11 @@ class Articulo:
                     else:
                         self.__log(f"Content loss coefficient: {content_loss_coeff}. Going down the document tree.")
                         best_parent = child
-                    test_counter += 1
+                    iter_counter += 1
                     break
                 else:
                     self.__log(f'Not found "{self.__title_element.text}" inside {child.name.upper()} tag. Skipping...')
+                    iter_counter += 1
         content = best_parent
         return content
 

@@ -8,6 +8,9 @@ class HTTPErrorException(Exception):
         self.http_code = http_code
         super().__init__(message)
 
+class MaxIterations(Exception):
+    pass
+
 class NoSuchElementException(Exception):
     pass
 
