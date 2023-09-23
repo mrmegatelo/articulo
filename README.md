@@ -17,9 +17,13 @@ from articulo import Articulo
 article = Articulo('https://info.cern.ch/')
 
 # Step 2: requesting article properties. All properties resolve lazily.
-print(article.title) # title property returns article title as a string
-print(article.text) # text property returns article content as a string
-print(article.markup) # markup property returns article content as an html markup string
+print(article.title) # article title as a string
+print(article.text) # article content as a string
+print(article.markup) # article content as an html markup string
+print(article.icon) # link to article icon
+print(article.description) # article meta description
+print(article.preview) # link to article meta preview image
+print(article.keywords) # article meta keywords list
 ```
 
 ### Verbose mode

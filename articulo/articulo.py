@@ -8,7 +8,7 @@ from functools import cached_property
 from typing import Union
 
 import requests
-from bs4 import BeautifulSoup, NavigableString
+from bs4 import BeautifulSoup, NavigableString, Tag
 from requests import RequestException
 
 from .exceptions import HTTPErrorException, MaxIterations, NoTitleException
@@ -26,7 +26,7 @@ class Articulo:
         link: str,
         threshold: float = 0.7,
         verbose: bool = False,
-        http_headers: Union[dict, None] = None
+        http_headers: Union[dict, None] = None,
     ) -> None:
         """
         Article object
@@ -67,6 +67,62 @@ class Articulo:
         return str(self.__content_markup)
 
     @cached_property
+    def description(self):
+        """
+        Article short description.
+        """
+        return self.__try_get_meta_content(
+            ["name", "property"],
+            ["description", "og:description", "twitter:description"],
+        )
+
+    @cached_property
+    def preview(self):
+        """
+        Dict with article icons.
+        Keys are sizes and values are links to icons.
+        """
+        return self.__try_get_meta_content(
+            ["name", "property"], ["og:image", "twitter:image", "twitter:image:src"]
+        )
+
+    @cached_property
+    def icon(self):
+        """
+        Link to article icon.
+        The biggest possible icon will be returned if there is
+        multiple icons and size attribute provided.
+        In other case will be returned first icon.
+        """
+        icon = None
+        last_biggest_size = 0
+
+        soup = BeautifulSoup(self.__html, features="lxml")
+        icons_meta = soup.findAll("link", attrs={"rel": "icon"})
+        for icon in icons_meta:
+            href: Union[str, None] = icon.get("href")
+            size: Union[str, None] = icon.get("sizes")
+            if size:
+                [width, _] = [int(i) for i in size.split("x")]
+                if width > last_biggest_size:
+                    icon = href
+                    last_biggest_size = width
+            else:
+                icon = href
+
+        return icon
+
+    @cached_property
+    def keywords(self):
+        """
+        List of article's keywords.
+        """
+        return [
+            kw.strip()
+            for kw in self.__try_get_meta_content(["name"], ["keywords"], "").split(",")
+        ]
+
+    @cached_property
     def __content_markup(self):
         """
         Parses article html and returns main artice content markup.
@@ -81,7 +137,7 @@ class Articulo:
 
         while not best_parent_found:
             self.__log(
-                f'Looking for an element containing "{self.__title_element.text}" title inside {best_parent.name.upper()} tag...' # pylint: disable=line-too-long
+                f'Looking for an element containing "{self.__title_element.text}" title inside {best_parent.name.upper()} tag...'  # pylint: disable=line-too-long
             )
             if iter_counter >= max_iterations:
                 raise MaxIterations(
@@ -113,24 +169,24 @@ class Articulo:
 
                     if child == self.__title_element.parent:
                         self.__log(
-                            f"Child element {child.name.upper()} is equal to title's parent element. Best possible parent is found." # pylint: disable=line-too-long
+                            f"Child element {child.name.upper()} is equal to title's parent element. Best possible parent is found."  # pylint: disable=line-too-long
                         )
                         best_parent_found = True
                     elif content_loss_coeff > self.__threshold:
                         self.__log(
-                            f"Content loss coefficient: {content_loss_coeff}. The best possible parent is {best_parent.name.upper()}." # pylint: disable=line-too-long
+                            f"Content loss coefficient: {content_loss_coeff}. The best possible parent is {best_parent.name.upper()}."  # pylint: disable=line-too-long
                         )
                         best_parent_found = True
                     else:
                         self.__log(
-                            f"Content loss coefficient: {content_loss_coeff}. Going down the document tree." # pylint: disable=line-too-long
+                            f"Content loss coefficient: {content_loss_coeff}. Going down the document tree."  # pylint: disable=line-too-long
                         )
                         best_parent = child
                     iter_counter += 1
                     break
 
                 self.__log(
-                    f'Not found "{self.__title_element.text}" inside {child.name.upper()} tag. Skipping...' # pylint: disable=line-too-long
+                    f'Not found "{self.__title_element.text}" inside {child.name.upper()} tag. Skipping...'  # pylint: disable=line-too-long
                 )
                 iter_counter += 1
         content = best_parent
@@ -147,11 +203,20 @@ class Articulo:
 
         soup = BeautifulSoup(self.__html, features="lxml")
         title = soup.find("title")
+
         if title is None:
             return title
 
+        title_text = title.text
+        title_meta = self.__try_find_meta(
+            ["property", "name"], ["og:title", "twitter:title"]
+        )
+
+        if not title_meta is None:
+            title_text = title_meta.get("content")
+
         title_inner = soup.find(
-            ["h1", "h2", "h3", "h4", "h5", "h6", "p"], string=re.compile(title.text)
+            ["h1", "h2", "h3", "h4", "h5", "h6", "p"], string=re.compile(title_text)
         )
 
         if title_inner is None:
@@ -176,6 +241,29 @@ class Articulo:
             ) from exc
         self.__log("Article loaded.")
         return response.text
+
+    def __try_find_meta(
+        self, attr_keys: list[str], attr_values: list[str]
+    ) -> Union[Tag, NavigableString, None]:
+        """
+        Looks for metatags content by their names
+        """
+        soup = BeautifulSoup(self.__html, features="lxml")
+        for key in attr_keys:
+            for val in attr_values:
+                if soup.findAll("meta", attrs={key: val}):
+                    return soup.find("meta", attrs={key: val})
+
+        return None
+
+    def __try_get_meta_content(
+        self, attr_keys: list[str], attr_values: list[str], defval=None
+    ):
+        soup = self.__try_find_meta(attr_keys, attr_values)
+        if soup is None:
+            return defval
+
+        return soup.get("content")
 
     def __log(self, message: str) -> None:
         """
