@@ -92,7 +92,7 @@ class Articulo:
         multiple icons and size attribute provided.
         In other case will be returned first icon.
         """
-        icon = None
+        icon_src = None
         last_biggest_size = 0
 
         soup = BeautifulSoup(self.__html, features="lxml")
@@ -103,22 +103,20 @@ class Articulo:
             if size:
                 [width, _] = [int(i) for i in size.split("x")]
                 if width > last_biggest_size:
-                    icon = href
+                    icon_src = href
                     last_biggest_size = width
             else:
-                icon = href
+                icon_src = href
 
-        return icon
+        return icon_src
 
     @cached_property
     def keywords(self):
         """
         List of article's keywords.
         """
-        return [
-            kw.strip()
-            for kw in self.__try_get_meta_content(["name"], ["keywords"], "").split(",")
-        ]
+        kw_str = self.__try_get_meta_content(["name"], ["keywords"], '')
+        return [] if len(kw_str) == 0 else [kw.strip() for kw in kw_str.split(",")]
 
     @cached_property
     def __content_markup(self):

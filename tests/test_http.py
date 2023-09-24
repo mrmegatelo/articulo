@@ -55,6 +55,5 @@ def test_throws_http_exception(requests_mock: MockerCore, url):
     article = Articulo(url)
     
     with pytest.raises(HTTPErrorException) as excetion:
-        print('runs here')
         assert article.title is None
     assert str(excetion.value) == 'Http error: Not Found'

@@ -1,3 +1,5 @@
+[![codecov](https://codecov.io/gh/mrmegatelo/articulo/graph/badge.svg?token=4UDVH5KHWP)](https://codecov.io/gh/mrmegatelo/articulo)
+
 # Articulo
 Tiny library for extraction articles from html.  
 It can extract the content of an article, both in text and HTML, and it's title.
