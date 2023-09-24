@@ -1,5 +1,6 @@
 import pytest
 from articulo import Articulo
+from articulo.exceptions import HTTPErrorException
 from requests_mock import MockerCore
 
 
@@ -48,3 +49,12 @@ def test_provides_headers_for_request(requests_mock: MockerCore, url, html):
     article_with_headers = Articulo(url, http_headers={ 'Accept': 'text/html' })
     article_with_headers.title
     assert request.last_request.headers.get('Accept') == 'text/html'
+
+def test_throws_http_exception(requests_mock: MockerCore, url):
+    requests_mock.get(url, text='Not Found', status_code=404, reason='Not Found')
+    article = Articulo(url)
+    
+    with pytest.raises(HTTPErrorException) as excetion:
+        print('runs here')
+        assert article.title is None
+    assert str(excetion.value) == 'Http error: Not Found'

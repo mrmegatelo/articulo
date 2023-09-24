@@ -11,6 +11,9 @@ class NoHTMLException(Exception):
     was recieved.
     """
 
+    def __init__(self, url: str, *args: object) -> None:
+        super().__init__(f'No HTML was recieved from {url}', *args)
+
 
 class HTTPErrorException(Exception):
     """
@@ -41,8 +44,8 @@ class NoSuchElementException(Exception):
 class NoTitleException(Exception):
     """
     Exception, raised when there is
-    title element cannot be found in page html.
+    no title element found in page html.
     """
 
     def __init__(self, url: str) -> None:
-        super().__init__(f"Document {url} has no apropriate TITLE tag in html.")
+        super().__init__(f"Document {url} has no tag containing artcile title in html.")

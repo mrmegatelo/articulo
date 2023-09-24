@@ -11,7 +11,7 @@ import requests
 from bs4 import BeautifulSoup, NavigableString, Tag
 from requests import RequestException
 
-from .exceptions import HTTPErrorException, MaxIterations, NoTitleException
+from .exceptions import HTTPErrorException, MaxIterations, NoTitleException, NoHTMLException
 
 
 class Articulo:
@@ -48,8 +48,6 @@ class Articulo:
         """
         Parsed article title
         """
-        if self.__title_element is None:
-            raise NoTitleException(self.__link)
         return self.__title_element.text
 
     @property
@@ -171,6 +169,7 @@ class Articulo:
                         self.__log(
                             f"Child element {child.name.upper()} is equal to title's parent element. Best possible parent is found."  # pylint: disable=line-too-long
                         )
+                        best_parent = child
                         best_parent_found = True
                     elif content_loss_coeff > self.__threshold:
                         self.__log(
@@ -189,6 +188,7 @@ class Articulo:
                     f'Not found "{self.__title_element.text}" inside {child.name.upper()} tag. Skipping...'  # pylint: disable=line-too-long
                 )
                 iter_counter += 1
+
         content = best_parent
         return content
 
@@ -205,7 +205,7 @@ class Articulo:
         title = soup.find("title")
 
         if title is None:
-            return title
+            raise NoTitleException(self.__link)
 
         title_text = title.text
         title_meta = self.__try_find_meta(
@@ -240,7 +240,13 @@ class Articulo:
                 f"Http error: {response.reason}", response.status_code
             ) from exc
         self.__log("Article loaded.")
-        return response.text
+
+        text = response.text
+
+        if response.text is None or len(response.text) == 0:
+            raise NoHTMLException(self.__link)
+
+        return text
 
     def __try_find_meta(
         self, attr_keys: list[str], attr_values: list[str]
