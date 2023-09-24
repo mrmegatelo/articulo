@@ -1,4 +1,8 @@
 [![codecov](https://codecov.io/gh/mrmegatelo/articulo/graph/badge.svg?token=4UDVH5KHWP)](https://codecov.io/gh/mrmegatelo/articulo)
+[![Python Versions](https://img.shields.io/pypi/pyversions/articulo)](PyPI)
+[![PyPI - Version](https://img.shields.io/pypi/v/articulo)](Version)
+![GitHub](https://img.shields.io/github/license/mrmegatelo/articulo)
+
 
 # Articulo
 Tiny library for extraction articles from html.  
