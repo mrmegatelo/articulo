@@ -21,6 +21,8 @@ class Articulo:
     and instantiate with link as a parameter.
     """
 
+    __max_iterations_count = 100
+
     def __init__(
         self,
         link: str,
@@ -121,74 +123,10 @@ class Articulo:
     @cached_property
     def __content_markup(self):
         """
-        Parses article html and returns main artice content markup.
+        Parses article HTML and returns the main article content markup using recursion.
         """
-        content = None
         soup = BeautifulSoup(self.__html, features="lxml")
-
-        best_parent_found = False
-        best_parent = soup.html
-        iter_counter = 0
-        max_iterations = 100
-
-        while not best_parent_found:
-            self.__log(
-                f'Looking for an element containing "{self.__title_element.text}" title inside {best_parent.name.upper()} tag...'  # pylint: disable=line-too-long
-            )
-            if iter_counter >= max_iterations:
-                raise MaxIterations(
-                    "Cannot find the best parent element within 100 iterations."
-                )
-            for child in best_parent.children:
-                if isinstance(child, NavigableString):
-                    self.__log(f'Skipping the "{child}" string...')
-                    continue
-                if child.find(
-                    self.__title_element.name, string=self.__title_element.text
-                ):
-                    self.__log(
-                        f'Found a {child.name.upper()} child tag with "{self.__title_element.text} inside."'  # pylint: disable=line-too-long
-                    )
-                    best_parent_content_length = len(best_parent.find_all("p"))
-                    child_content_length = len(child.find_all("p"))
-
-                    if child_content_length == 0:
-                        self.__log(
-                            f"Child element {child.name.upper()} is has no nested P elements. The best possible parent is {best_parent.name.upper()}."  # pylint: disable=line-too-long
-                        )
-                        best_parent_found = True
-                        break
-
-                    content_loss_coeff = 1.0 - (
-                        child_content_length / best_parent_content_length
-                    )
-
-                    if child == self.__title_element.parent:
-                        self.__log(
-                            f"Child element {child.name.upper()} is equal to title's parent element. Best possible parent is found."  # pylint: disable=line-too-long
-                        )
-                        best_parent = child
-                        best_parent_found = True
-                    elif content_loss_coeff > self.__threshold:
-                        self.__log(
-                            f"Content loss coefficient: {content_loss_coeff}. The best possible parent is {best_parent.name.upper()}."  # pylint: disable=line-too-long
-                        )
-                        best_parent_found = True
-                    else:
-                        self.__log(
-                            f"Content loss coefficient: {content_loss_coeff}. Going down the document tree."  # pylint: disable=line-too-long
-                        )
-                        best_parent = child
-                    iter_counter += 1
-                    break
-
-                self.__log(
-                    f'Not found "{self.__title_element.text}" inside {child.name.upper()} tag. Skipping...'  # pylint: disable=line-too-long
-                )
-                iter_counter += 1
-
-        content = best_parent
-        return content
+        return self.__look_for_best_parent(soup.html, 0)
 
     @cached_property
     def __title_element(self):
@@ -210,11 +148,13 @@ class Articulo:
             ["property", "name"], ["og:title", "twitter:title"]
         )
 
+        print(title_meta)
+
         if not title_meta is None:
             title_text = title_meta.get("content")
 
         title_inner = soup.find(
-            ["h1", "h2", "h3", "h4", "h5", "h6", "p"], string=re.compile(title_text)
+            ["h1", "h2", "h3", "h4", "h5", "h6", "p"], string=re.compile(re.escape(title_text))
         )
 
         if title_inner is None:
@@ -268,6 +208,57 @@ class Articulo:
             return defval
 
         return soup.get("content")
+
+    def __look_for_best_parent(self, parent: Tag, iter_counter: int):
+        """
+        Recursively searches for the best parent element containing the main article content.
+        """
+        self.__log(f'Looking for an element containing "{self.__title_element.text}" title inside {parent.name.upper()} tag...') #pylint: disable=line-too-long
+
+        if iter_counter >= self.__max_iterations_count:
+            raise MaxIterations("Cannot find the best parent element within the maximum iterations.") #pylint: disable=line-too-long
+
+        best_parent = None
+
+        for child in parent.children:
+            if isinstance(child, NavigableString):
+                self.__log(f'Skipping the "{child}" string...')
+                continue
+
+            if child.find(self.__title_element.name, string=self.__title_element.text) is None:
+                self.__log(f'Not found "{self.__title_element.text}" inside {child.name.upper()} tag. Skipping...') #pylint: disable=line-too-long
+                continue
+
+            self.__log(f'Found a {child.name.upper()} child tag with "{self.__title_element.text} inside."') #pylint: disable=line-too-long
+            best_parent_content_length = len(parent.text)
+            child_content_length = len(child.text)
+
+            information_loss_coeff = 1.0 - (child_content_length / best_parent_content_length)
+
+            if child == self.__title_element.parent and information_loss_coeff < self.__threshold:
+                self.__log(f"Child element {child.name.upper()} is equal to title's parent element. Best possible parent is found.") #pylint: disable=line-too-long
+                best_parent = child
+                break
+
+            if information_loss_coeff > self.__threshold:
+                self.__log(f"Content loss coefficient: {information_loss_coeff}. The best possible parent is {parent.name.upper()}.") #pylint: disable=line-too-long
+                best_parent = parent
+                break
+
+
+            iter_counter += 1
+
+        if best_parent:
+            return best_parent
+
+        # Recursively search in child elements
+        for child in parent.children:
+            if isinstance(child, Tag):
+                result = self.__look_for_best_parent(child, iter_counter)
+                if result:
+                    return result
+
+        return None
 
     def __log(self, message: str) -> None:
         """

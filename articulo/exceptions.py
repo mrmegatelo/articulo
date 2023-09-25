@@ -12,7 +12,7 @@ class NoHTMLException(Exception):
     """
 
     def __init__(self, url: str, *args: object) -> None:
-        super().__init__(f'No HTML was recieved from {url}', *args)
+        super().__init__(f"No HTML was recieved from {url}", *args)
 
 
 class HTTPErrorException(Exception):

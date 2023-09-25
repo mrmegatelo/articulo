@@ -5,28 +5,15 @@ from articulo.exceptions import NoHTMLException
 from requests_mock import MockerCore
 from bs4 import BeautifulSoup
 
+from .utils.helpers import read_html
+
 @pytest.fixture
 def url():
     return 'https://info.cern.ch/'
 
 @pytest.fixture
 def initial_html() -> str:
-    return """
-<html><head></head><body><header>
-<title>http://info.cern.ch</title>
-</header>
-
-<h1>http://info.cern.ch - home of the first website</h1>
-<p>From here you can:</p>
-<ul>
-<li><a href="http://info.cern.ch/hypertext/WWW/TheProject.html">Browse the first website</a></li>
-<li><a href="http://line-mode.cern.ch/www/hypertext/WWW/TheProject.html">Browse the first website using the line-mode browser simulator</a></li>
-<li><a href="http://home.web.cern.ch/topics/birth-web">Learn about the birth of the web</a></li>
-<li><a href="http://home.web.cern.ch/about">Learn about CERN, the physics laboratory where the web was born</a></li>
-</ul>
-
-</body></html>
-"""
+    return read_html('article_simple.html')
 
 class TestArticleInsideBODY:
     def test_parses_article_content(self, requests_mock: MockerCore, url, initial_html, expected_html):
@@ -50,3 +37,70 @@ class TestNoHtmlException:
     @pytest.fixture
     def html(self):
         return ''
+    
+class TestFindHtmlWithSiblings:
+    def test_parses_article(self, requests_mock: MockerCore, url, html, expected_html):
+        requests_mock.get(url, text=html)
+        article = Articulo(url)
+        assert article.markup == expected_html
+
+
+    @pytest.fixture    
+    def expected_html(self, html):
+        soup = BeautifulSoup(html, features='lxml')
+        return str(soup.find('article'))
+    
+    @pytest.fixture
+    def html(self) -> str:
+        return read_html('article_with_content_siblings.html')
+    
+class TestFindHtmlWithNestedHeader:
+    def test_parses_article(self, requests_mock: MockerCore, url, html, expected_html):
+        requests_mock.get(url, text=html)
+        article = Articulo(url, verbose=True)
+        print(article.markup)
+        assert article.markup == expected_html
+
+
+    @pytest.fixture    
+    def expected_html(self, html):
+        soup = BeautifulSoup(html, features='lxml')
+        return str(soup.find('article'))
+    
+    @pytest.fixture
+    def html(self) -> str:
+        return read_html('article_with_nested_heading.html')
+    
+class TestFindHtmlWithDeeplyNestedHeader:
+    def test_parses_article(self, requests_mock: MockerCore, url, html, expected_html):
+        requests_mock.get(url, text=html)
+        article = Articulo(url, verbose=True)
+        print(article.markup)
+        assert article.markup == expected_html
+
+
+    @pytest.fixture    
+    def expected_html(self, html):
+        soup = BeautifulSoup(html, features='lxml')
+        return str(soup.find('article'))
+    
+    @pytest.fixture
+    def html(self) -> str:
+        return read_html('article_with_deeply_nested_heading.html')
+    
+    class TestFindHtmlWithDeeplyNestedHeader:
+        def test_parses_article(self, requests_mock: MockerCore, url, html, expected_html):
+            requests_mock.get(url, text=html)
+            article = Articulo(url, verbose=True)
+            print(article.markup)
+            assert article.markup == expected_html
+
+
+        @pytest.fixture    
+        def expected_html(self, html):
+            soup = BeautifulSoup(html, features='lxml')
+            return str(soup.find('article'))
+        
+        @pytest.fixture
+        def html(self) -> str:
+            return read_html('article_with_deeply_nested_content.html')

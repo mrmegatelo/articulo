@@ -3,6 +3,8 @@ from articulo import Articulo
 from articulo.exceptions import HTTPErrorException
 from requests_mock import MockerCore
 
+from .utils.helpers import read_html
+
 
 @pytest.fixture
 def url() -> str:
@@ -10,22 +12,7 @@ def url() -> str:
 
 @pytest.fixture
 def html() -> str:
-    return """
-<html><head></head><body><header>
-<title>http://info.cern.ch</title>
-</header>
-
-<h1>http://info.cern.ch - home of the first website</h1>
-<p>From here you can:</p>
-<ul>
-<li><a href="http://info.cern.ch/hypertext/WWW/TheProject.html">Browse the first website</a></li>
-<li><a href="http://line-mode.cern.ch/www/hypertext/WWW/TheProject.html">Browse the first website using the line-mode browser simulator</a></li>
-<li><a href="http://home.web.cern.ch/topics/birth-web">Learn about the birth of the web</a></li>
-<li><a href="http://home.web.cern.ch/about">Learn about CERN, the physics laboratory where the web was born</a></li>
-</ul>
-
-</body></html>
-"""
+    return read_html('article_simple.html')
 
 def test_dont_run_request_on_instatiation(requests_mock: MockerCore, url, html):
     request = requests_mock.get(url, text=html)
