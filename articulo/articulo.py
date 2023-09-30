@@ -57,6 +57,9 @@ class Articulo:
         """
         Parsed article main content text.
         """
+        markup = self.__content_markup
+        if markup is None:
+            return None
         return self.__content_markup.text
 
     @property
@@ -64,6 +67,8 @@ class Articulo:
         """
         Article main content html markup.
         """
+        if self.__content_markup is None:
+            return None
         return str(self.__content_markup)
 
     @cached_property
@@ -126,7 +131,7 @@ class Articulo:
         Parses article HTML and returns the main article content markup using recursion.
         """
         soup = BeautifulSoup(self.__html, features="lxml")
-        return self.__look_for_best_parent(soup.html, 0)
+        return self.__look_for_best_parent(soup.body, 0)
 
     @cached_property
     def __title_element(self):
@@ -148,10 +153,12 @@ class Articulo:
             ["property", "name"], ["og:title", "twitter:title"]
         )
 
-        print(title_meta)
-
         if not title_meta is None:
             title_text = title_meta.get("content")
+
+        title_text_match = re.match(r"([\w\s]+)", title_text, flags=re.U)
+        if title_text_match:
+            title_text = title_text_match.group(1).strip()
 
         title_inner = soup.find(
             ["h1", "h2", "h3", "h4", "h5", "h6", "p"], string=re.compile(re.escape(title_text))
@@ -215,6 +222,10 @@ class Articulo:
         """
         self.__log(f'Looking for an element containing "{self.__title_element.text}" title inside {parent.name.upper()} tag...') #pylint: disable=line-too-long
 
+        if parent == self.__title_element.parent:
+            self.__log(f"{parent.name.upper()} is equal to title's parent element. Best possible parent is found.") #pylint: disable=line-too-long
+            return parent
+
         if iter_counter >= self.__max_iterations_count:
             raise MaxIterations("Cannot find the best parent element within the maximum iterations.") #pylint: disable=line-too-long
 
@@ -234,12 +245,6 @@ class Articulo:
             child_content_length = len(child.text)
 
             information_loss_coeff = 1.0 - (child_content_length / best_parent_content_length)
-
-            if child == self.__title_element.parent and information_loss_coeff < self.__threshold:
-                self.__log(f"Child element {child.name.upper()} is equal to title's parent element. Best possible parent is found.") #pylint: disable=line-too-long
-                best_parent = child
-                break
-
             if information_loss_coeff > self.__threshold:
                 self.__log(f"Content loss coefficient: {information_loss_coeff}. The best possible parent is {parent.name.upper()}.") #pylint: disable=line-too-long
                 best_parent = parent

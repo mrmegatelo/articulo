@@ -15,6 +15,16 @@ def url() -> str:
 def initial_html() -> str:
     return read_html('article_simple.html')
 
+class TestEmptyBody:
+    def test_retrieves_title(self, requests_mock: MockerCore, url, html):
+        requests_mock.get(url, text=html)
+        article = Articulo(url)
+        assert article.title == 'http://info.cern.ch'
+
+    @pytest.fixture
+    def html(self):
+        return read_html('article_with_empty_body.html')
+
 class TestTagH1:
     def test_retrieves_title(self, requests_mock: MockerCore, url, html):
         requests_mock.get(url, text=html)

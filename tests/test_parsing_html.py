@@ -15,10 +15,21 @@ def url():
 def initial_html() -> str:
     return read_html('article_simple.html')
 
+class TestEmptyBody:
+    def test_retrieves_title(self, requests_mock: MockerCore, url, html):
+        requests_mock.get(url, text=html)
+        article = Articulo(url)
+        assert article.markup is None
+        assert article.text is None
+
+    @pytest.fixture
+    def html(self):
+        return read_html('article_with_empty_body.html')
+
 class TestArticleInsideBODY:
     def test_parses_article_content(self, requests_mock: MockerCore, url, initial_html, expected_html):
         requests_mock.get(url, text=initial_html)
-        article = Articulo(url)
+        article = Articulo(url, verbose=True)
         assert article.markup == expected_html
 
     @pytest.fixture    
@@ -58,7 +69,6 @@ class TestFindHtmlWithNestedHeader:
     def test_parses_article(self, requests_mock: MockerCore, url, html, expected_html):
         requests_mock.get(url, text=html)
         article = Articulo(url, verbose=True)
-        print(article.markup)
         assert article.markup == expected_html
 
 
@@ -75,7 +85,6 @@ class TestFindHtmlWithDeeplyNestedHeader:
     def test_parses_article(self, requests_mock: MockerCore, url, html, expected_html):
         requests_mock.get(url, text=html)
         article = Articulo(url, verbose=True)
-        print(article.markup)
         assert article.markup == expected_html
 
 
@@ -92,7 +101,6 @@ class TestFindHtmlWithDeeplyNestedHeader:
         def test_parses_article(self, requests_mock: MockerCore, url, html, expected_html):
             requests_mock.get(url, text=html)
             article = Articulo(url, verbose=True)
-            print(article.markup)
             assert article.markup == expected_html
 
 
