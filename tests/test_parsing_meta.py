@@ -2,6 +2,7 @@ import pytest
 from articulo import Articulo
 from requests_mock import MockerCore
 from bs4 import BeautifulSoup
+from urllib.parse import urljoin
 
 @pytest.fixture
 def url() -> str:
@@ -32,6 +33,12 @@ class TestParsingIcons:
 
         assert article.icon is None
 
+    def test_makes_relative_import_absolute(self, requests_mock: MockerCore, url, html_with_default_icon_relative, icon_href_default):
+        requests_mock.get(url, text=html_with_default_icon_relative)
+        article = Articulo(url)
+
+        assert article.icon == urljoin(url, icon_href_default)
+
     def test_retrieves_default_icon(self, requests_mock: MockerCore, url, html_with_default_icon, icon_href_default):
         requests_mock.get(url, text=html_with_default_icon)
         article = Articulo(url)
@@ -45,9 +52,21 @@ class TestParsingIcons:
         assert article.icon == icon_href_big
         
     @pytest.fixture
-    def icon_href_default(self):
+    def icon_href_default_relative(self):
         return '/icon.png'
     
+    @pytest.fixture
+    def icon_href_default(self, url, icon_href_default_relative):
+        return urljoin(url, icon_href_default_relative)
+
+    @pytest.fixture
+    def html_with_default_icon_relative(self, initial_html, icon_href_default_relative):
+        soup = BeautifulSoup(initial_html, features='lxml')
+        icon_without_size_tag = soup.new_tag('link', rel='icon', href=icon_href_default_relative)
+        soup.head.append(icon_without_size_tag)
+
+        return str(soup)
+
     @pytest.fixture
     def html_with_default_icon(self, initial_html, icon_href_default):
         soup = BeautifulSoup(initial_html, features='lxml')
@@ -57,12 +76,12 @@ class TestParsingIcons:
         return str(soup)
     
     @pytest.fixture
-    def icon_href_small(self):
-        return '/icon_small.png'
+    def icon_href_small(self, url):
+        return urljoin(url, '/icon_small.png')
     
     @pytest.fixture
-    def icon_href_big(self):
-        return '/icon_big.png'
+    def icon_href_big(sel, url):
+        return urljoin(url, '/icon_big.png')
 
     @pytest.fixture
     def html_with_several_icons(self, initial_html, icon_href_big, icon_href_small):
@@ -126,18 +145,35 @@ class TestParsingPreview:
         article = Articulo(url)
         assert article.preview is None
 
-    def test_retrieves_preview_from_meta(self, requests_mock: MockerCore, url, html_with_meta_preview, expected_preview):
-        requests_mock.get(url, text=html_with_meta_preview)
+    def test_makes_relative_link_absolute(self, requests_mock: MockerCore, url, html_with_meta_preview_relative, expected_preview_absolute):
+        requests_mock.get(url, text=html_with_meta_preview_relative)
         article = Articulo(url)
-        assert article.preview == expected_preview
+        assert article.preview == expected_preview_absolute
+
+
+    def test_retrieves_preview_from_meta(self, requests_mock: MockerCore, url, html_with_meta_preview_absolute, expected_preview_absolute):
+        requests_mock.get(url, text=html_with_meta_preview_absolute)
+        article = Articulo(url)
+        assert article.preview == expected_preview_absolute
 
     @pytest.fixture
-    def expected_preview(self):
+    def expected_preview_relative(self):
         return '/preview.png'
+
+    @pytest.fixture
+    def expected_preview_absolute(self, url, expected_preview_relative):
+        return urljoin(url, expected_preview_relative)
+
+    @pytest.fixture
+    def html_with_meta_preview_relative(self, initial_html, expected_preview_relative):
+        soup = BeautifulSoup(initial_html, features='lxml')
+        preview_meta = soup.new_tag('meta', attrs={ 'property': 'og:image', 'content': expected_preview_relative })
+        soup.head.append(preview_meta)
+        return str(soup)
     
     @pytest.fixture
-    def html_with_meta_preview(self, initial_html, expected_preview):
+    def html_with_meta_preview_absolute(self, initial_html, expected_preview_absolute):
         soup = BeautifulSoup(initial_html, features='lxml')
-        preview_meta = soup.new_tag('meta', attrs={ 'property': 'og:image', 'content': expected_preview })
+        preview_meta = soup.new_tag('meta', attrs={ 'property': 'og:image', 'content': expected_preview_absolute})
         soup.head.append(preview_meta)
         return str(soup)

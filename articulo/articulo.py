@@ -6,7 +6,9 @@ Tiny library for extracting html article content."""
 import re
 from functools import cached_property
 from typing import Union
+from urllib.parse import urlparse, urlunparse
 
+import validators
 import requests
 from bs4 import BeautifulSoup, NavigableString, Tag
 from requests import RequestException
@@ -87,9 +89,13 @@ class Articulo:
         Dict with article icons.
         Keys are sizes and values are links to icons.
         """
-        return self.__try_get_meta_content(
+        preview = self.__try_get_meta_content(
             ["name", "property"], ["og:image", "twitter:image", "twitter:image:src"]
         )
+
+        if not preview is None:
+            preview = self.__get_absolute_link(preview)
+        return preview
 
     @cached_property
     def icon(self):
@@ -110,10 +116,10 @@ class Articulo:
             if size:
                 [width, _] = [int(i) for i in size.split("x")]
                 if width > last_biggest_size:
-                    icon_src = href
+                    icon_src = self.__get_absolute_link(href)
                     last_biggest_size = width
             else:
-                icon_src = href
+                icon_src = self.__get_absolute_link(href)
 
         return icon_src
 
@@ -264,6 +270,16 @@ class Articulo:
                     return result
 
         return None
+
+    def __get_absolute_link(self, link: str) -> str:
+        """
+        Makes absolute link from relative
+        """
+        if not validators.url(link):
+            parsed_url = urlparse(self.__link)
+            parsed_url = parsed_url._replace(path=link)
+            return urlunparse(parsed_url)
+        return link
 
     def __log(self, message: str) -> None:
         """

@@ -4,8 +4,12 @@
 that can be raised during the process of
 article downloading and parsing."""
 
+class ArticuloException(Exception):
+    """
+    Base class for an articulo exception
+    """
 
-class NoHTMLException(Exception):
+class NoHTMLException(ArticuloException):
     """
     Exception, raises when there is no html
     was recieved.
@@ -15,7 +19,7 @@ class NoHTMLException(Exception):
         super().__init__(f"No HTML was recieved from {url}", *args)
 
 
-class HTTPErrorException(Exception):
+class HTTPErrorException(ArticuloException):
     """
     Exception, raises when there was
     an HTTP error recieved while requesting article content.
@@ -27,21 +31,21 @@ class HTTPErrorException(Exception):
         super().__init__(message)
 
 
-class MaxIterations(Exception):
+class MaxIterations(ArticuloException):
     """
     Exception, raises when there is no parent
     element found during 100 iterations.
     """
 
 
-class NoSuchElementException(Exception):
+class NoSuchElementException(ArticuloException):
     """
     Exception, raises when there is some
     element cannot be found in page html.
     """
 
 
-class NoTitleException(Exception):
+class NoTitleException(ArticuloException):
     """
     Exception, raised when there is
     no title element found in page html.
