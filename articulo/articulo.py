@@ -26,20 +26,20 @@ class Articulo:
     __max_iterations_count = 100
 
     def __init__(
-        self,
-        link: str,
-        threshold: float = 0.7,
-        verbose: bool = False,
-        http_headers: Union[dict, None] = None,
+            self,
+            link: str,
+            threshold: float = 0.7,
+            verbose: bool = False,
+            http_headers: Union[dict, None] = None,
     ) -> None:
         """
         Article object
 
-        Parameters:
-        @link: Link to article, that should be processed.
-        @threshold (optional): Max information loss coefficient, that affects content parsing.
-        @verbose (optional): Verbose mode. If enabled than all the operations will be logged.
-        @http_headers: Additional headers for HTTP request. There is no default headers.
+        Params:
+        :link: Link to article, that should be processed.
+        :threshold (optional): Max information loss coefficient, that affects content parsing.
+        :verbose (optional): Verbose mode. If enabled than all the operations will be logged.
+        :http_headers (optional): Additional headers for HTTP request. There is no default headers.
         """
 
         self.__link = link
@@ -52,7 +52,7 @@ class Articulo:
         """
         Parsed article title
         """
-        return re.sub(r"\n+.+", "", self.__title_element.text.strip()).strip()
+        return self.__clean_title_text(self.__title_element.text)
 
     @property
     def text(self):
@@ -113,7 +113,7 @@ class Articulo:
         for icon in icons_meta:
             href: Union[str, None] = icon.get("href")
             size: Union[str, None] = icon.get("sizes")
-            size_with_dimensions =  not size is None and re.match(r"\d+x\d+", size)
+            size_with_dimensions = not size is None and re.match(r"\d+x\d+", size)
             if size_with_dimensions:
                 [width, _] = [int(i) for i in size.split("x")]
                 if width > last_biggest_size:
@@ -160,13 +160,13 @@ class Articulo:
             ["property", "name"], ["og:title", "twitter:title"]
         )
 
-        if not title_meta is None:
+        if title_meta is not None:
             title_text = title_meta.get("content")
 
         possible_titles = soup.findAll(["h1", "h2", "h3", "h4", "h5", "h6", "p"])
 
         for p_title in possible_titles:
-            if not isinstance(p_title.text, str):
+            if not isinstance(p_title.text, str) or len(p_title.text) == 0:
                 break
             pt_text = self.__clean_title_text(p_title.text)
             if title_text in pt_text or pt_text in title_text:
@@ -199,7 +199,7 @@ class Articulo:
         return text
 
     def __try_find_meta(
-        self, attr_keys: list[str], attr_values: list[str]
+            self, attr_keys: list[str], attr_values: list[str]
     ) -> Union[Tag, NavigableString, None]:
         """
         Looks for metatags content by their names
@@ -213,7 +213,7 @@ class Articulo:
         return None
 
     def __try_get_meta_content(
-        self, attr_keys: list[str], attr_values: list[str], defval=None
+            self, attr_keys: list[str], attr_values: list[str], defval=None
     ):
         soup = self.__try_find_meta(attr_keys, attr_values)
         if soup is None:
@@ -225,14 +225,17 @@ class Articulo:
         """
         Recursively searches for the best parent element containing the main article content.
         """
-        self.__log(f'Looking for an element containing "{self.__title_element.text}" title inside {parent.name.upper()} tag...') #pylint: disable=line-too-long
+        self.__log(
+            f'Looking for an element containing "{self.__title_element.text}" title inside {parent.name.upper()} tag...')  # pylint: disable=line-too-long
 
         if parent == self.__title_element.parent:
-            self.__log(f"{parent.name.upper()} is equal to title's parent element. Best possible parent is found.") #pylint: disable=line-too-long
+            self.__log(
+                f"{parent.name.upper()} is equal to title's parent element. Best possible parent is found.")  # pylint: disable=line-too-long
             return parent
 
         if iter_counter >= self.__max_iterations_count:
-            raise MaxIterations("Cannot find the best parent element within the maximum iterations.") #pylint: disable=line-too-long
+            raise MaxIterations(
+                "Cannot find the best parent element within the maximum iterations.")  # pylint: disable=line-too-long
 
         best_parent = None
 
@@ -242,19 +245,21 @@ class Articulo:
                 continue
 
             if child.find(self.__title_element.name, string=self.__title_element.text) is None:
-                self.__log(f'Not found "{self.__title_element.text}" inside {child.name.upper()} tag. Skipping...') #pylint: disable=line-too-long
+                self.__log(
+                    f'Not found "{self.__title_element.text}" inside {child.name.upper()} tag. Skipping...')  # pylint: disable=line-too-long
                 continue
 
-            self.__log(f'Found a {child.name.upper()} child tag with "{self.__title_element.text} inside."') #pylint: disable=line-too-long
+            self.__log(
+                f'Found a {child.name.upper()} child tag with "{self.__title_element.text} inside."')  # pylint: disable=line-too-long
             best_parent_content_length = len(parent.text)
             child_content_length = len(child.text)
 
             information_loss_coeff = 1.0 - (child_content_length / best_parent_content_length)
             if information_loss_coeff > self.__threshold:
-                self.__log(f"Content loss coefficient: {information_loss_coeff}. The best possible parent is {parent.name.upper()}.") #pylint: disable=line-too-long
+                self.__log(
+                    f"Content loss coefficient: {information_loss_coeff}. The best possible parent is {parent.name.upper()}.")  # pylint: disable=line-too-long
                 best_parent = parent
                 break
-
 
             iter_counter += 1
 
