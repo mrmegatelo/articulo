@@ -113,7 +113,8 @@ class Articulo:
         for icon in icons_meta:
             href: Union[str, None] = icon.get("href")
             size: Union[str, None] = icon.get("sizes")
-            if size:
+            size_with_dimensions =  not size is None and re.match(r"\d+x\d+", size)
+            if size_with_dimensions:
                 [width, _] = [int(i) for i in size.split("x")]
                 if width > last_biggest_size:
                     icon_src = self.__get_absolute_link(href)

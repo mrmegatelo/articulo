@@ -50,6 +50,12 @@ class TestParsingIcons:
         article = Articulo(url)
 
         assert article.icon == icon_href_big
+
+    def test_retrieves_default_icon_if_meta_has_any_size(self, requests_mock: MockerCore, url, html_with_icon_with_any_size, icon_href_default):
+        requests_mock.get(url, text=html_with_icon_with_any_size)
+        article = Articulo(url)
+
+        assert article.icon == icon_href_default
         
     @pytest.fixture
     def icon_href_default_relative(self):
@@ -90,6 +96,16 @@ class TestParsingIcons:
         icon_big = soup.new_tag('link', rel='icon', href=icon_href_big, sizes='32x32')
         soup.head.append(icon_big)
         soup.head.append(icon_small)
+
+        return str(soup)
+    
+    @pytest.fixture
+    def html_with_icon_with_any_size(self, initial_html, icon_href_big, icon_href_default):
+        soup = BeautifulSoup(initial_html, features='lxml')
+        icon_without_size_tag = soup.new_tag('link', rel='icon', href=icon_href_default)
+        icon_big = soup.new_tag('link', rel='icon', href=icon_href_big, sizes='any')
+        soup.head.append(icon_big)
+        soup.head.append(icon_without_size_tag)
 
         return str(soup)
     
