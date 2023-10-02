@@ -52,7 +52,7 @@ class Articulo:
         """
         Parsed article title
         """
-        return self.__title_element.text
+        return re.sub(r"\n+.+", "", self.__title_element.text.strip()).strip()
 
     @property
     def text(self):
@@ -162,18 +162,16 @@ class Articulo:
         if not title_meta is None:
             title_text = title_meta.get("content")
 
-        title_text_match = re.match(r"([\w\s]+)", title_text, flags=re.U)
-        if title_text_match:
-            title_text = title_text_match.group(1).strip()
+        possible_titles = soup.findAll(["h1", "h2", "h3", "h4", "h5", "h6", "p"])
 
-        title_inner = soup.find(
-            ["h1", "h2", "h3", "h4", "h5", "h6", "p"], string=re.compile(re.escape(title_text))
-        )
+        for p_title in possible_titles:
+            if not isinstance(p_title.text, str):
+                break
+            pt_text = self.__clean_title_text(p_title.text)
+            if title_text in pt_text or pt_text in title_text:
+                return p_title
 
-        if title_inner is None:
-            return title
-
-        return title_inner
+        return title
 
     @cached_property
     def __html(self) -> Union[str, None]:
@@ -280,6 +278,14 @@ class Articulo:
             parsed_url = parsed_url._replace(path=link)
             return urlunparse(parsed_url)
         return link
+
+    def __clean_title_text(self, text: str):
+        """
+        Cleans text from special and newline characters
+        """
+        nbsp = '\xa0'
+        pt_text = re.sub(r"\n+.+", "", text.strip()).strip().replace(nbsp, " ")
+        return pt_text
 
     def __log(self, message: str) -> None:
         """
