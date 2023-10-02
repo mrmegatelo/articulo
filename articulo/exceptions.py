@@ -4,10 +4,12 @@
 that can be raised during the process of
 article downloading and parsing."""
 
+
 class ArticuloException(Exception):
     """
     Base class for an articulo exception
     """
+
 
 class NoHTMLException(ArticuloException):
     """
