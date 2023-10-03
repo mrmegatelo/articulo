@@ -1,5 +1,7 @@
 import pytest
 import re
+from bs4 import BeautifulSoup
+
 from articulo import Articulo
 from articulo.exceptions import NoTitleException
 from requests_mock import MockerCore
@@ -159,7 +161,7 @@ class TestTitleNotExist:
         requests_mock.get(url, text=html)
         article = Articulo(url)
         with pytest.raises(NoTitleException) as excetion:
-            article.title is None
+            assert article.title is None
         assert excetion.match(re.compile(url))
 
     @pytest.fixture
@@ -168,11 +170,27 @@ class TestTitleNotExist:
 
 
 class TestTitleEmpty:
-    def test_retrieves_title(self, requests_mock: MockerCore, url, html):
-        requests_mock.get(url, text=html)
+    def test_retrieves_title(self, requests_mock: MockerCore, url, html_with_empty_title):
+        requests_mock.get(url, text=html_with_empty_title)
         article = Articulo(url)
         assert article.title == "http://info.cern.ch"
 
+    def looks_for_non_empty_title(self, requests_mock: MockerCore, url, html_with_empty_and_non_empty_titles, expected_title):
+        requests_mock.get(url, text=html_with_empty_and_non_empty_titles)
+        article = Articulo(url)
+        assert article.title == expected_title
+
     @pytest.fixture
-    def html(self, initial_html: str) -> str:
+    def html_with_empty_title(self, initial_html: str) -> str:
         return re.sub(r"<h1>.+</h1>", "<h1></h1>", initial_html)
+
+    @pytest.fixture
+    def expected_title(self):
+        return "Expect this title"
+
+    @pytest.fixture
+    def html_with_empty_and_non_empty_titles(self, html_with_empty_title, expected_title):
+        soup = BeautifulSoup(html_with_empty_title, "html.parser")
+        heading = soup.find("h1")
+        heading.insert_after(BeautifulSoup(f"<h1>{expected_title}</h1>", "html.parser"))
+        return str(soup)

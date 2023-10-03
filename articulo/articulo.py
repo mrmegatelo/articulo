@@ -166,9 +166,10 @@ class Articulo:
         possible_titles = soup.findAll(["h1", "h2", "h3", "h4", "h5", "h6", "p"])
 
         for p_title in possible_titles:
-            if not isinstance(p_title.text, str) or len(p_title.text) == 0:
-                break
+            if not isinstance(p_title.text, str) or len(p_title.text.strip()) == 0:
+                continue
             pt_text = self.__clean_title_text(p_title.text)
+
             if title_text in pt_text or pt_text in title_text:
                 return p_title
 
@@ -246,7 +247,7 @@ class Articulo:
 
             if child.find(self.__title_element.name, string=self.__title_element.text) is None:
                 self.__log(
-                    f'Not found "{self.__title_element.text}" inside {child.name.upper()} tag. Skipping...')  # pylint: disable=line-too-long
+                    f'Not found "{self.__title_element.text}" inside {child.name.upper()} tag. Skipping...') # pylint: disable=line-too-long
                 continue
 
             self.__log(
