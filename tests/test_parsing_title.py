@@ -6,7 +6,7 @@ from articulo import Articulo
 from articulo.exceptions import NoTitleException
 from requests_mock import MockerCore
 
-from .utils.helpers import read_html
+from .utils.helpers import read_html_text
 
 
 @pytest.fixture
@@ -16,7 +16,7 @@ def url() -> str:
 
 @pytest.fixture
 def initial_html() -> str:
-    return read_html("article_simple.html")
+    return read_html_text("article_simple.html")
 
 
 class TestEmptyBody:
@@ -27,7 +27,7 @@ class TestEmptyBody:
 
     @pytest.fixture
     def html(self):
-        return read_html("article_with_empty_body.html")
+        return read_html_text("article_with_empty_body.html")
 
 
 class TestTagH1:
@@ -131,7 +131,7 @@ class TestTitleFromMeta:
 
     @pytest.fixture
     def html(self):
-        return read_html("article_with_og_title_meta.html")
+        return read_html_text("article_with_og_title_meta.html")
 
 
 class TestUnexpectedTitleTag:

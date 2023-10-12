@@ -55,3 +55,13 @@ class NoTitleException(ArticuloException):
 
     def __init__(self, url: str) -> None:
         super().__init__(f"Document {url} has no tag containing artcile title in html.")
+
+
+class DecodingException(ArticuloException):
+    """
+    Exception, raised when there is
+    Articulo cannot decode article with provided charset.
+    """
+
+    def __init__(self, url: str, charset: str) -> None:
+        super().__init__(f"Document {url} cannot be decoded with {charset} charset")

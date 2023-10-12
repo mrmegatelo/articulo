@@ -1,9 +1,9 @@
 import pytest
 from articulo import Articulo
-from articulo.exceptions import HTTPErrorException
+from articulo.exceptions import HTTPErrorException, DecodingException
 from requests_mock import MockerCore
 
-from .utils.helpers import read_html
+from .utils.helpers import read_html_text, read_html_bytes
 
 
 @pytest.fixture
@@ -13,7 +13,12 @@ def url() -> str:
 
 @pytest.fixture
 def html() -> str:
-    return read_html("article_simple.html")
+    return read_html_text("article_simple.html")
+
+
+@pytest.fixture
+def html_ru() -> bytes:
+    return read_html_bytes("article_simple_ru.html", "cp1251")
 
 
 def test_dont_run_request_on_instatiation(requests_mock: MockerCore, url, html):
@@ -49,3 +54,19 @@ def test_throws_http_exception(requests_mock: MockerCore, url):
     with pytest.raises(HTTPErrorException) as excetion:
         assert article.title is None
     assert str(excetion.value) == "Http error: Not Found"
+
+
+def test_handles_default_charset(requests_mock: MockerCore, url, html_ru):
+    requests_mock.get(url, content=html_ru)
+    article = Articulo(url, def_charset="cp1251")
+
+    assert article.title == "Тестовый заголовок"
+
+
+def test_throws_decoding_exception(requests_mock: MockerCore, url, html_ru):
+    requests_mock.get(url, content=html_ru)
+    article = Articulo(url)
+
+    with pytest.raises(DecodingException) as excetion:
+        assert article.title is None
+    assert str(excetion.value) == "Document https://info.cern.ch/ cannot be decoded with utf-8 charset"

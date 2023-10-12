@@ -5,7 +5,7 @@ from articulo.exceptions import NoHTMLException
 from requests_mock import MockerCore
 from bs4 import BeautifulSoup
 
-from .utils.helpers import read_html
+from .utils.helpers import read_html_text
 
 
 @pytest.fixture
@@ -15,7 +15,7 @@ def url():
 
 @pytest.fixture
 def initial_html() -> str:
-    return read_html("article_simple.html")
+    return read_html_text("article_simple.html")
 
 
 class TestEmptyBody:
@@ -27,7 +27,7 @@ class TestEmptyBody:
 
     @pytest.fixture
     def html(self):
-        return read_html("article_with_empty_body.html")
+        return read_html_text("article_with_empty_body.html")
 
 
 class TestArticleInsideBODY:
@@ -70,7 +70,7 @@ class TestFindHtmlWithSiblings:
 
     @pytest.fixture
     def html(self) -> str:
-        return read_html("article_with_content_siblings.html")
+        return read_html_text("article_with_content_siblings.html")
 
 
 class TestFindHtmlWithNestedHeader:
@@ -86,7 +86,7 @@ class TestFindHtmlWithNestedHeader:
 
     @pytest.fixture
     def html(self) -> str:
-        return read_html("article_with_nested_heading.html")
+        return read_html_text("article_with_nested_heading.html")
 
 
 class TestFindHtmlWithDeeplyNestedHeader:
@@ -102,7 +102,7 @@ class TestFindHtmlWithDeeplyNestedHeader:
 
     @pytest.fixture
     def html(self) -> str:
-        return read_html("article_with_deeply_nested_heading.html")
+        return read_html_text("article_with_deeply_nested_heading.html")
 
     class TestFindHtmlWithDeeplyNestedHeader:
         def test_parses_article(
@@ -119,4 +119,4 @@ class TestFindHtmlWithDeeplyNestedHeader:
 
         @pytest.fixture
         def html(self) -> str:
-            return read_html("article_with_deeply_nested_content.html")
+            return read_html_text("article_with_deeply_nested_content.html")
