@@ -178,8 +178,9 @@ class Articulo:
             if not isinstance(p_title.text, str) or len(p_title.text.strip()) == 0:
                 continue
             pt_text = self.__clean_title_text(p_title.text)
+            normalized_title_text = self.__clean_title_text(title_text)
 
-            if title_text in pt_text or pt_text in title_text:
+            if normalized_title_text in pt_text or pt_text in normalized_title_text:
                 return p_title
 
         return title
@@ -315,7 +316,7 @@ class Articulo:
         Cleans text from special and newline characters
         """
         nbsp = "\xa0"
-        pt_text = re.sub(r"\n+.+", "", text.strip()).strip().replace(nbsp, " ")
+        pt_text = re.sub(r"\n+.+", "", text.strip()).replace(nbsp, " ").strip()
         return pt_text
 
     def __log(self, message: str) -> None:
