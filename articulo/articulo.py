@@ -121,16 +121,26 @@ class Articulo:
         icons_meta = soup.findAll("link", attrs={"rel": "icon"})
         for icon in icons_meta:
             href: Union[str, None] = icon.get("href")
-            size: Union[str, None] = icon.get("sizes")
-            size_with_dimensions = not size is None and re.match(r"\d+x\d+", size)
-            if size_with_dimensions:
-                [width, _] = [int(i) for i in size.split("x")]
-                if width > last_biggest_size:
-                    icon_src = self.__get_absolute_link(href)
-                    last_biggest_size = width
-            else:
-                icon_src = self.__get_absolute_link(href)
+            sizes: Union[str, None] = icon.get("sizes")
 
+            if href is None:
+                continue
+
+            if sizes is None:
+                if icon_src is None:
+                    icon_src = self.__get_absolute_link(href)
+                continue
+
+            for size in sizes.split(" "):
+                if re.match(r"\d+x\d+", size):
+                    [width, _] = [int(i) for i in size.split("x")]
+                    if width > last_biggest_size:
+                        icon_src = self.__get_absolute_link(href)
+                        last_biggest_size = width
+                else:
+                    print(f"Invalid size attribute: {size} for icon {href}")
+                    icon_src = self.__get_absolute_link(href)
+            print(href)
         return icon_src
 
     @cached_property

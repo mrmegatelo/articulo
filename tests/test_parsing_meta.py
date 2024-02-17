@@ -72,12 +72,23 @@ class TestParsingIcons:
         requests_mock: MockerCore,
         url,
         html_with_icon_with_any_size,
-        icon_href_default,
+        icon_href_big,
     ):
         requests_mock.get(url, text=html_with_icon_with_any_size)
         article = Articulo(url)
+        assert article.icon == icon_href_big
 
-        assert article.icon == icon_href_default
+    def test_retrieves_biggest_icon_if_meta_has_multiple_sizes(
+        self,
+        requests_mock: MockerCore,
+        url,
+        html_with_icon_with_multiple_sizes,
+        icon_href_big,
+    ):
+        requests_mock.get(url, text=html_with_icon_with_multiple_sizes)
+        article = Articulo(url)
+
+        assert article.icon == icon_href_big
 
     @pytest.fixture
     def icon_href_default_relative(self):
@@ -132,6 +143,18 @@ class TestParsingIcons:
         soup = BeautifulSoup(initial_html, features="lxml")
         icon_without_size_tag = soup.new_tag("link", rel="icon", href=icon_href_default)
         icon_big = soup.new_tag("link", rel="icon", href=icon_href_big, sizes="any")
+        soup.head.append(icon_big)
+        soup.head.append(icon_without_size_tag)
+
+        return str(soup)
+
+    @pytest.fixture
+    def html_with_icon_with_multiple_sizes(
+        self, initial_html, icon_href_big, icon_href_default
+    ):
+        soup = BeautifulSoup(initial_html, features="lxml")
+        icon_without_size_tag = soup.new_tag("link", rel="icon", href=icon_href_default)
+        icon_big = soup.new_tag("link", rel="icon", href=icon_href_big, sizes="32x32 16x16")
         soup.head.append(icon_big)
         soup.head.append(icon_without_size_tag)
 
