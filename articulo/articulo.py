@@ -10,9 +10,10 @@ from urllib.parse import urlparse, urlunparse
 
 import validators
 import requests
-from bs4 import BeautifulSoup, NavigableString, Tag
+from bs4 import BeautifulSoup, NavigableString, Tag, Comment
 from requests import RequestException
 
+from .constants import important_content_tags, tags_to_completely_remove
 from .exceptions import (
     HTTPErrorException,
     MaxIterations,
@@ -157,7 +158,12 @@ class Articulo:
         Parses article HTML and returns the main article content markup using recursion.
         """
         soup = BeautifulSoup(self.__html, features="lxml")
-        return self.__look_for_best_parent(soup.body, 0)
+        raw_content = self.__look_for_best_parent(soup.body, 0)
+        if raw_content is None:
+            return raw_content
+
+        sanitized_content = self.__sanitize_content(raw_content)
+        return sanitized_content
 
     @cached_property
     def __title_element(self):
@@ -310,6 +316,31 @@ class Articulo:
                     return result
 
         return None
+
+    def __sanitize_content(self, content: Tag) -> Tag:
+        """
+        Sanitizes article content from unnecessary tags.
+        """
+        self.__log("Sanitizing article content...")
+
+        # Filtering all the non-important tags.
+        for tag in content.find_all(True):  # find_all(True) will match any tag
+            if tag.decomposed:
+                continue
+            # First, we need to remove all the tags that should be completely removed
+            if tag.name in tags_to_completely_remove:
+                tag.decompose()
+            # Then, we need to unwrap all the tags that has important content
+            # but not needed by themselves
+            elif tag.name not in important_content_tags:
+                tag.unwrap()
+
+        # Removing all the comments
+        comments = content.find_all(string=lambda text: isinstance(text, Comment))
+        for comment in comments:
+            comment.extract()
+
+        return content
 
     def __get_absolute_link(self, link: str) -> str:
         """

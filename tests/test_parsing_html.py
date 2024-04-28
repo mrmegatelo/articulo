@@ -1,9 +1,10 @@
 import pytest
 import re
 from articulo import Articulo
+from articulo.constants import important_content_tags, tags_to_completely_remove
 from articulo.exceptions import NoHTMLException
 from requests_mock import MockerCore
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Comment
 
 from .utils.helpers import read_html_text
 
@@ -120,3 +121,31 @@ class TestFindHtmlWithDeeplyNestedHeader:
         @pytest.fixture
         def html(self) -> str:
             return read_html_text("article_with_deeply_nested_content.html")
+
+
+class TestFilteringContent:
+    def test_filters_content(self, requests_mock: MockerCore, url, html, expected_html):
+        requests_mock.get(url, text=html)
+        article = Articulo(url, verbose=True)
+        assert article.markup == expected_html
+
+    @pytest.fixture
+    def expected_html(self, html):
+        soup = BeautifulSoup(html, features="lxml")
+        content = soup.find("body")
+        for tag in content.find_all(True):
+            if tag.decomposed:
+                continue
+            elif tag.name in tags_to_completely_remove:
+                tag.decompose()
+            elif tag.name not in important_content_tags:
+                tag.unwrap()
+
+        comments = content.find_all(string=lambda text: isinstance(text, Comment))
+        for comment in comments:
+            comment.extract()
+        return str(content)
+
+    @pytest.fixture
+    def html(self) -> str:
+        return read_html_text("article_with_non_content_tags.html")
