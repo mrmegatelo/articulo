@@ -10,10 +10,9 @@ from urllib.parse import urlparse, urlunparse
 
 import validators
 import requests
-from bs4 import BeautifulSoup, NavigableString, Tag, Comment
+from bs4 import BeautifulSoup, NavigableString, Tag
 from requests import RequestException
 
-from .constants import important_content_tags, tags_to_completely_remove
 from .exceptions import (
     HTTPErrorException,
     MaxIterations,
@@ -21,6 +20,7 @@ from .exceptions import (
     NoHTMLException,
     DecodingException,
 )
+from .utils import sanitize_html
 
 
 class Articulo:
@@ -322,25 +322,7 @@ class Articulo:
         Sanitizes article content from unnecessary tags.
         """
         self.__log("Sanitizing article content...")
-
-        # Filtering all the non-important tags.
-        for tag in content.find_all(True):  # find_all(True) will match any tag
-            if tag.decomposed:
-                continue
-            # First, we need to remove all the tags that should be completely removed
-            if tag.name in tags_to_completely_remove:
-                tag.decompose()
-            # Then, we need to unwrap all the tags that has important content
-            # but not needed by themselves
-            elif tag.name not in important_content_tags:
-                tag.unwrap()
-
-        # Removing all the comments
-        comments = content.find_all(string=lambda text: isinstance(text, Comment))
-        for comment in comments:
-            comment.extract()
-
-        return content
+        return sanitize_html(content)
 
     def __get_absolute_link(self, link: str) -> str:
         """

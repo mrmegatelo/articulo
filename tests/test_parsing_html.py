@@ -6,6 +6,7 @@ from articulo.exceptions import NoHTMLException
 from requests_mock import MockerCore
 from bs4 import BeautifulSoup, Comment
 
+from articulo.utils import sanitize_html
 from .utils.helpers import read_html_text
 
 
@@ -83,7 +84,7 @@ class TestFindHtmlWithNestedHeader:
     @pytest.fixture
     def expected_html(self, html):
         soup = BeautifulSoup(html, features="lxml")
-        return str(soup.find("article"))
+        return str(sanitize_html(soup.find("article")))
 
     @pytest.fixture
     def html(self) -> str:
@@ -99,7 +100,7 @@ class TestFindHtmlWithDeeplyNestedHeader:
     @pytest.fixture
     def expected_html(self, html):
         soup = BeautifulSoup(html, features="lxml")
-        return str(soup.find("article"))
+        return str(sanitize_html(soup.find("article")))
 
     @pytest.fixture
     def html(self) -> str:
@@ -116,7 +117,7 @@ class TestFindHtmlWithDeeplyNestedHeader:
         @pytest.fixture
         def expected_html(self, html):
             soup = BeautifulSoup(html, features="lxml")
-            return str(soup.find("article"))
+            return str(sanitize_html(soup.find("article")))
 
         @pytest.fixture
         def html(self) -> str:
