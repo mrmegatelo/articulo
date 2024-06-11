@@ -153,6 +153,17 @@ class Articulo:
         return [] if len(kw_str) == 0 else [kw.strip() for kw in kw_str.split(",")]
 
     @cached_property
+    def rss(self):
+        """
+        Link to article's RSS feed.
+        """
+        soup = BeautifulSoup(self.__html, features="lxml")
+        link = soup.find("link", attrs={"type": "application/rss+xml"})
+        if link is None:
+            return None
+        return link.attrs.get("href")
+
+    @cached_property
     def __content_markup(self):
         """
         Parses article HTML and returns the main article content markup using recursion.
