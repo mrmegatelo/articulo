@@ -8,6 +8,7 @@ from functools import cached_property
 from typing import Union
 from urllib.parse import urlparse, urlunparse
 
+import extruct
 import validators
 import requests
 from bs4 import BeautifulSoup, NavigableString, Tag
@@ -20,7 +21,10 @@ from .exceptions import (
     NoHTMLException,
     DecodingException,
 )
-from .utils import sanitize_html
+from .utils import (
+    sanitize_html,
+    get_json_ld_element,
+)
 
 
 class Articulo:
@@ -111,7 +115,7 @@ class Articulo:
     def icon(self):
         """
         Link to article icon.
-        The biggest possible icon will be returned if there is
+        The biggest possible icon will be returned if there are
         multiple icons and size attribute provided.
         In other case will be returned first icon.
         """
@@ -161,7 +165,23 @@ class Articulo:
         link = soup.find("link", attrs={"type": "application/rss+xml"})
         if link is None:
             return None
-        return link.attrs.get("href")
+        return self.__get_absolute_link(link.attrs.get("href"))
+
+    @cached_property
+    def has_paywall(self):
+        """
+        Check if article has paywall.
+        """
+        if "json-ld" in self.__microformat:
+            is_accessable_for_free = get_json_ld_element(
+                self.__microformat.get("json-ld", []), "isAccessibleForFree"
+            )
+            return (
+                is_accessable_for_free is False
+                or is_accessable_for_free == "False"
+                or False
+            )
+        return False
 
     @cached_property
     def __content_markup(self):
@@ -175,6 +195,10 @@ class Articulo:
 
         sanitized_content = self.__sanitize_content(raw_content)
         return sanitized_content
+
+    @cached_property
+    def __microformat(self):
+        return extruct.extract(self.__html, base_url=self.__link)
 
     @cached_property
     def __title_element(self):

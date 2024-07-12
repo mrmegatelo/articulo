@@ -11,6 +11,7 @@ lxml = "^5.2.2"
 beautifulsoup4 = "^4.12.2"
 requests = "^2.31.0"
 validators = "^0.32.0"
+extruct = "^0.17.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.2"

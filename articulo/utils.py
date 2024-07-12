@@ -29,3 +29,35 @@ def sanitize_html(content: Tag) -> Tag:
         comment.extract()
 
     return content
+
+
+def get_dublincore_element(data, key):
+    """
+    Gets dublincore element by key
+    """
+    for item in data:
+        for element in item.get("elements"):
+            if element.get("name") == key:
+                return element.get("content")
+    return None
+
+
+def get_json_ld_element(data: list[dict], key):
+    """
+    Gets json-ld element by key
+    """
+    for item in data:
+        return item.get(key)
+    return None
+
+
+def get_og_element(data, key):
+    """
+    Gets opengraph element by key
+    """
+    for item in data:
+        for element in item.get("properties"):
+            (og_key, og_value) = element
+            if og_key == key:
+                return og_value
+    return None
