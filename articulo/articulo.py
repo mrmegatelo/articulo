@@ -198,7 +198,10 @@ class Articulo:
 
     @cached_property
     def __microformat(self):
-        return extruct.extract(self.__html, base_url=self.__link)
+        try:
+            return extruct.extract(self.__html, base_url=self.__link)
+        except ValueError:
+            return {}
 
     @cached_property
     def __title_element(self):
