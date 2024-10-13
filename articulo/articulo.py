@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""This is Articulo. 
+"""This is Articulo.
 Tiny library for extracting html article content."""
 
 import re
@@ -143,9 +143,8 @@ class Articulo:
                         icon_src = self.__get_absolute_link(href)
                         last_biggest_size = width
                 else:
-                    print(f"Invalid size attribute: {size} for icon {href}")
+                    self.__log(f"Invalid size attribute: {size} for icon {href}")
                     icon_src = self.__get_absolute_link(href)
-            print(href)
         return icon_src
 
     @cached_property
@@ -162,16 +161,22 @@ class Articulo:
         Link to article's RSS feed.
         """
         soup = BeautifulSoup(self.__html, features="lxml")
-        link = soup.find("link", attrs={"type": "application/rss+xml"})
-        if link is None:
-            return None
-        return self.__get_absolute_link(link.attrs.get("href"))
+        links = soup.findAll("link", attrs={"type": "application/rss+xml"})
+
+        if len(links) == 0:
+            links = soup.findAll("link", attrs={"type": "application/atom+xml"})
+
+        if len(links) == 0:
+            return links
+
+        return [self.__get_absolute_link(link.attrs.get("href")) for link in links]
 
     @cached_property
     def has_paywall(self):
         """
         Check if article has paywall.
         """
+
         if "json-ld" in self.__microformat:
             is_accessable_for_free = get_json_ld_element(
                 self.__microformat.get("json-ld", []), "isAccessibleForFree"
