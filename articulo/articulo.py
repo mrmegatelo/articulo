@@ -108,7 +108,7 @@ class Articulo:
             ["name", "property"], ["og:image", "twitter:image", "twitter:image:src"]
         )
 
-        if not preview is None:
+        if preview is not None:
             preview = self.__get_absolute_link(preview)
         return preview
 
@@ -384,10 +384,10 @@ class Articulo:
         """
         Makes absolute link from relative
         """
-        if not validators.url(link):
+        if validators.url(link) is True and validators.url(self.__link_or_content) is True:
             parsed_url = urlparse(self.__link_or_content)
             parsed_url = parsed_url._replace(path=link)
-            return urlunparse(parsed_url)
+            return str(urlunparse(parsed_url))
         return link
 
     def __clean_title_text(self, text: str):
