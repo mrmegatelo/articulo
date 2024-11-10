@@ -14,7 +14,7 @@ class TestEmptyBody:
     def test_does_not_have_paywall(self, requests_mock: MockerCore, url, html):
         requests_mock.get(url, text=html)
         article = Articulo(url)
-        assert article.rss is None
+        assert article.rss == []
 
     @pytest.fixture
     def html(self):
@@ -25,7 +25,7 @@ class TestRssAbsolute:
     def test_does_has_paywall(self, requests_mock: MockerCore, url, html):
         requests_mock.get(url, text=html)
         article = Articulo(url)
-        assert article.rss == "http://info.cern.ch/rss.xml"
+        assert article.rss == ["http://info.cern.ch/rss.xml"]
 
     @pytest.fixture
     def html(self):
@@ -36,7 +36,7 @@ class TestRssRelative:
     def test_does_has_paywall(self, requests_mock: MockerCore, url, html):
         requests_mock.get(url, text=html)
         article = Articulo(url)
-        assert article.rss == "https://info.cern.ch/rss.xml"
+        assert article.rss == ["https://info.cern.ch/rss.xml"]
 
     @pytest.fixture
     def html(self):

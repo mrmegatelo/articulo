@@ -150,3 +150,19 @@ class TestFilteringContent:
     @pytest.fixture
     def html(self) -> str:
         return read_html_text("article_with_non_content_tags.html")
+
+class TestStringContent:
+    def test_parses_article_content(
+        self, requests_mock: MockerCore, url, initial_html, expected_html
+    ):
+        article = Articulo(url, verbose=True)
+        assert article.markup == expected_html
+
+    @pytest.fixture
+    def url(self):
+        return read_html_text("article_simple.html")
+
+    @pytest.fixture
+    def expected_html(self, initial_html):
+        soup = BeautifulSoup(initial_html, features="lxml")
+        return str(soup.body)

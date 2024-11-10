@@ -24,6 +24,7 @@ from .exceptions import (
 from .utils import (
     sanitize_html,
     get_json_ld_element,
+    is_url,
 )
 
 
@@ -38,7 +39,7 @@ class Articulo:
 
     def __init__(
         self,
-        link: str,
+        link_or_content: str,
         threshold: float = 0.7,
         verbose: bool = False,
         http_headers: Union[dict, None] = None,
@@ -48,14 +49,14 @@ class Articulo:
         Article object
 
         Params:
-        :link: Link to article, that should be processed.
+        :link_or_content: Link to the article or content of the article, that should be processed.
         :threshold (optional): Max information loss coefficient, that affects content parsing.
         :verbose (optional): Verbose mode. If enabled than all the operations will be logged.
         :http_headers (optional): Additional headers for HTTP request. There is no default headers.
         :def_charset (optional): Default charset for article html. Default is utf-8.
         """
 
-        self.__link = link
+        self.__link_or_content = link_or_content
         self.__threshold = threshold
         self.__verbose = verbose
         self.__http_headers = http_headers
@@ -204,7 +205,7 @@ class Articulo:
     @cached_property
     def __microformat(self):
         try:
-            return extruct.extract(self.__html, base_url=self.__link)
+            return extruct.extract(self.__html, base_url=self.__link_or_content)
         except ValueError:
             return {}
 
@@ -221,7 +222,7 @@ class Articulo:
         title = soup.find("title")
 
         if title is None:
-            raise NoTitleException(self.__link)
+            raise NoTitleException(self.__link_or_content)
 
         title_text = title.text
         title_meta = self.__try_find_meta(
@@ -250,8 +251,24 @@ class Articulo:
         Loads article html from link provided at the moment of an Articulo object instantiation.
         Returns full page html or None if request was not successful.
         """
-        self.__log(f"Start loading article from {self.__link}...")
-        response = requests.get(self.__link, timeout=2000, headers=self.__http_headers)
+        if is_url(self.__link_or_content):
+            text = self.__get_html_by_url()
+        else:
+            text = self.__link_or_content
+
+        if text is None or len(text) == 0:
+            raise NoHTMLException(self.__link_or_content)
+
+        return text
+
+    def __get_html_by_url(self):
+        """
+        Gets the article content from the url
+        """
+        self.__log(f"Start loading article from {self.__link_or_content}...")
+        response = requests.get(
+            self.__link_or_content, timeout=2000, headers=self.__http_headers
+        )
         response.encoding = self.__def_charset
 
         try:
@@ -264,13 +281,9 @@ class Articulo:
         self.__log("Article loaded.")
 
         try:
-            text = response.content.decode(self.__def_charset)
+            return response.content.decode(self.__def_charset)
         except ValueError as exc:
-            raise DecodingException(self.__link, self.__def_charset) from exc
-        if text is None or len(text) == 0:
-            raise NoHTMLException(self.__link)
-
-        return text
+            raise DecodingException(self.__link_or_content, self.__def_charset) from exc
 
     def __try_find_meta(
         self, attr_keys: list[str], attr_values: list[str]
@@ -372,7 +385,7 @@ class Articulo:
         Makes absolute link from relative
         """
         if not validators.url(link):
-            parsed_url = urlparse(self.__link)
+            parsed_url = urlparse(self.__link_or_content)
             parsed_url = parsed_url._replace(path=link)
             return urlunparse(parsed_url)
         return link

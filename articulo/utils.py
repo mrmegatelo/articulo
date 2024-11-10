@@ -1,6 +1,7 @@
 """
 This file contains the utility functions that are used in the main module.
 """
+from urllib.parse import urlparse
 
 from bs4 import Tag, Comment
 
@@ -61,3 +62,14 @@ def get_og_element(data, key):
             if og_key == key:
                 return og_value
     return None
+
+
+def is_url(maybe_url):
+    """
+    Checks if the string is url
+    """
+    try:
+        result = urlparse(maybe_url)
+        return all([result.scheme, result.netloc])
+    except AttributeError:
+        return False
