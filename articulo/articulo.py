@@ -384,7 +384,7 @@ class Articulo:
         """
         Makes absolute link from relative
         """
-        if validators.url(link) is True and validators.url(self.__link_or_content) is True:
+        if validators.url(link) is not True and validators.url(self.__link_or_content) is True:
             parsed_url = urlparse(self.__link_or_content)
             parsed_url = parsed_url._replace(path=link)
             return str(urlunparse(parsed_url))
